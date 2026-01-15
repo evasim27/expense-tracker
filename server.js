@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import pg from "pg";
+import rateLimit from "express-rate-limit";
 
 dotenv.config();
 
@@ -12,6 +13,19 @@ const pool = new Pool({
 });
 
 const app = express();
+
+// Rate limiting middleware - prevents abuse
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: "Too many requests from this IP, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to all routes
+app.use(limiter);
+
 app.use(cors());
 app.use(express.json());
 
