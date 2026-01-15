@@ -1,0 +1,129 @@
+name: CI/CD Pipeline with GitHub Pages and Environments
+
+on:
+  push:
+    branches:
+      - main
+      - production
+  pull_request:
+    branches:
+      - main
+      - production
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  # Job 1: Deploy to GitHub Pages
+  deploy-github-pages:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Job 2: Build and Test
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests (if any)
+        run: npm test --if-present
+      
+      - name: Build Docker image
+        run: |
+          docker build -t expense-tracker:${{ github.sha }} .
+          docker tag expense-tracker:${{ github.sha }} expense-tracker:latest
+
+  # Job 3: Deploy to Development Environment
+  deploy-development:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: Development
+      url: https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/expense-tracker
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and Push Docker image (dev)
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/expense-tracker:dev .
+          docker push ${{ secrets.DOCKER_USERNAME }}/expense-tracker:dev
+      
+      - name: Deployment Summary
+        run: |
+          echo "✅ Successfully deployed to Development environment"
+          echo "🐳 Docker image: ${{ secrets.DOCKER_USERNAME }}/expense-tracker:dev"
+          echo "🔗 Image URL: https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/expense-tracker"
+
+  # Job 4: Deploy to Production Environment
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/production'
+    environment:
+      name: Production
+      url: https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/expense-tracker
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and Push Docker image (prod)
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/expense-tracker:prod .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/expense-tracker:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/expense-tracker:prod
+          docker push ${{ secrets.DOCKER_USERNAME }}/expense-tracker:latest
+      
+      - name: Deployment Summary
+        run: |
+          echo "✅ Successfully deployed to Production environment"
+          echo "🐳 Docker image: ${{ secrets.DOCKER_USERNAME }}/expense-tracker:prod"
+          echo "🔗 Image URL: https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/expense-tracker"
