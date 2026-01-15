@@ -82,20 +82,30 @@ jobs:
       - name: SonarCloud Analysis Summary
         run: |
           echo "✅ SonarCloud analysis completed"
-          echo "📊 View results at: https://sonarcloud.io"
+          echo "📊 View results at: https://sonarcloud.io/summary/overall?id=evasim27_expense-tracker"
       
-      - name: Wait for Quality Gate (Production only)
-        if: github.ref == 'refs/heads/production'
-        uses: SonarSource/sonarqube-quality-gate-action@master
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      
-      - name: Quality Gate Status
+      - name: Check Quality Gate Status (Production only)
         if: github.ref == 'refs/heads/production'
         run: |
-          echo "✅ Quality Gate passed successfully"
-          echo "🚀 Ready for Production deployment"
+          echo "⏳ Waiting for Quality Gate result..."
+          sleep 10
+          
+          # Get Quality Gate status from SonarCloud API
+          QUALITY_GATE_STATUS=$(curl -s -u ${{ secrets.SONAR_TOKEN }}: \
+            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=evasim27_expense-tracker" \
+            | jq -r '.projectStatus.status')
+          
+          echo "Quality Gate Status: $QUALITY_GATE_STATUS"
+          
+          if [ "$QUALITY_GATE_STATUS" != "OK" ] && [ "$QUALITY_GATE_STATUS" != "NONE" ]; then
+            echo "❌ Quality Gate Failed!"
+            echo "🚫 Production deployment is BLOCKED due to quality gate failure."
+            echo "📊 Check details: https://sonarcloud.io/summary/overall?id=evasim27_expense-tracker"
+            exit 1
+          else
+            echo "✅ Quality Gate Passed!"
+            echo "🚀 Ready for Production deployment"
+          fi
 
   deploy-development:
     name: Deploy to Development
