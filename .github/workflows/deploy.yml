@@ -83,24 +83,16 @@ jobs:
         run: |
           echo "✅ SonarCloud analysis completed"
           echo "📊 View results at: https://sonarcloud.io"
-
-  quality-gate-check:
-    name: Check Quality Gate
-    runs-on: ubuntu-latest
-    needs: sonarcloud-analysis
-    if: github.ref == 'refs/heads/production'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
       
-      - name: Wait for Quality Gate
+      - name: Wait for Quality Gate (Production only)
+        if: github.ref == 'refs/heads/production'
         uses: SonarSource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       
       - name: Quality Gate Status
+        if: github.ref == 'refs/heads/production'
         run: |
           echo "✅ Quality Gate passed successfully"
           echo "🚀 Ready for Production deployment"
@@ -138,7 +130,7 @@ jobs:
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [build-and-test, quality-gate-check]
+    needs: [build-and-test, sonarcloud-analysis]
     if: github.ref == 'refs/heads/production'
     environment:
       name: Production
