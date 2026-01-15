@@ -64,7 +64,52 @@ jobs:
           docker build -t expense-tracker:${{ github.sha }} .
           docker tag expense-tracker:${{ github.sha }} expense-tracker:latest
 
-  # Job 3: Deploy to Development Environment
+  # Job 3: SonarCloud Analysis
+  sonarcloud-analysis:
+    name: SonarCloud Code Analysis
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis
+      
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      
+      - name: SonarCloud Analysis Summary
+        run: |
+          echo "✅ SonarCloud analysis completed"
+          echo "📊 View results at: https://sonarcloud.io"
+
+  # Job 4: Quality Gate Check
+  quality-gate-check:
+    name: Check Quality Gate
+    runs-on: ubuntu-latest
+    needs: sonarcloud-analysis
+    if: github.ref == 'refs/heads/production'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Wait for Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      
+      - name: Quality Gate Status
+        run: |
+          echo "✅ Quality Gate passed successfully"
+          echo "🚀 Ready for Production deployment"
+
+  # Job 5: Deploy to Development Environment
   deploy-development:
     name: Deploy to Development
     runs-on: ubuntu-latest
@@ -95,11 +140,11 @@ jobs:
           echo "🐳 Docker image: ${{ secrets.DOCKER_USERNAME }}/expense-tracker:dev"
           echo "🔗 Image URL: https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/expense-tracker"
 
-  # Job 4: Deploy to Production Environment
+  # Job 6: Deploy to Production Environment
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: [build-and-test, quality-gate-check]
     if: github.ref == 'refs/heads/production'
     environment:
       name: Production
