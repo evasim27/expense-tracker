@@ -153,6 +153,7 @@ jobs:
           }" || echo "Datadog metrics failed (non-blocking)"
 
   # Job 5: SonarCloud Analysis
+  sonarcloud-analysis:
     name: SonarCloud Code Analysis
     runs-on: ubuntu-latest
     needs: build-and-test
