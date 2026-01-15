@@ -72,7 +72,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: Development
-      url: https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/expense-tracker
+      url: https://hub.docker.com/r/esim27/expense-tracker
     
     steps:
       - name: Checkout code
@@ -103,7 +103,7 @@ jobs:
     if: github.ref == 'refs/heads/production'
     environment:
       name: Production
-      url: https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/expense-tracker
+      url: https://hub.docker.com/r/esim27/expense-tracker
     
     steps:
       - name: Checkout code
