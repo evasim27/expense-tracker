@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Expense Tracker</h1>
+    <div>
+      <button id="logout-btn" class="btn">Logout</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="panel" id="summary-panel">
+      <h2>Summary</h2>
+      <div class="summary-grid">
+        <div class="summary-card accent accent-purple">
+          <div class="summary-label">Total Spent</div>
+          <div class="summary-value" id="total-spent">$0.00</div>
+        </div>
+        <div class="summary-card accent accent-orange">
+          <div class="summary-label">This Month</div>
+          <div class="summary-value" id="total-month">$0.00</div>
+        </div>
+        <div class="summary-card" id="budget-card" style="cursor:pointer;">
+          <div class="summary-label">Budget (This Month)</div>
+          <div class="summary-value"><span id="budget-this-month">—</span> <span style="color:#64748b; font-size:12px;">Remaining: <span id="budget-remaining">—</span></span></div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Categories</div>
+          <div class="summary-value" id="total-categories">0</div>
+        </div>
+        <div class="summary-card"><div class="summary-label">Expenses</div><div class="summary-value" id="total-expenses">0</div></div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="left-column">
+        <section class="panel">
+          <h2>Add Expense</h2>
+          <form id="expense-form" class="form-grid" autocomplete="off">
+            <label>
+              <span>Amount</span>
+              <input type="number" id="amount" step="0.01" min="0" placeholder="0.00" required />
+            </label>
+            <label>
+              <span>Date</span>
+              <input type="date" id="date" required />
+            </label>
+            <label>
+              <span>Category</span>
+              <select id="category" required></select>
+            </label>
+            <label class="full">
+              <span>Note</span>
+              <input type="text" id="note" maxlength="120" placeholder="Optional description" />
+            </label>
+            <div class="actions full">
+              <button type="submit" class="btn primary" id="save-expense">Add Expense</button>
+              <button type="button" class="btn" id="cancel-edit" style="display:none;">Cancel</button>
+              <button type="reset" class="btn">Reset</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel">
+          <h2>Manage Categories</h2>
+          <form id="category-form" class="form-inline" autocomplete="off">
+            <input type="text" id="new-category" placeholder="New category name" required />
+            <button type="submit" class="btn">Add</button>
+          </form>
+          <ul id="category-list" class="pill-list"></ul>
+        </section>
+      </div>
+
+      <div class="right-column">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Expenses</h2>
+            <div class="filters">
+              <select id="filter-category"></select>
+              <input type="month" id="filter-month" />
+              <input type="text" id="filter-text" placeholder="Search note" />
+              <button id="clear-filters" class="btn">Clear</button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="table" id="expenses-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Category</th>
+                  <th class="right">Amount</th>
+                  <th>Note</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="expenses-tbody"></tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2" class="right">Total</td>
+                  <td class="right" id="filtered-total">$0.00</td>
+                  <td colspan="2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Spending by Category</h2>
+          <ul id="by-category" class="by-category"></ul>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <button id="export-csv" class="btn">Export CSV</button>
+  </footer>
+
+  <!-- Charts -->
+  <section class="container" id="charts-section" style="padding-top:0;">
+    <section class="layout">
+      <div class="left-column">
+        <section class="panel">
+          <h2>By Category (This Month)</h2>
+          <canvas id="chart-by-category" height="220"></canvas>
+          <ul id="legend-by-category" class="chart-legend"></ul>
+        </section>
+      </div>
+      <div class="right-column">
+        <section class="panel">
+          <h2>Monthly Spend (Last 12 Months)</h2>
+          <canvas id="chart-monthly" height="220"></canvas>
+          <ul id="legend-monthly" class="chart-legend"></ul>
+        </section>
+      </div>
+    </section>
+  </section>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+
+
